@@ -1,0 +1,6 @@
+{
+  "name": "store-api",
+  "private": true,
+  "type": "module",
+  "description": "Demo order lookup, support tickets and question log for the support bot, no dependencies"
+}

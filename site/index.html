@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tide &amp; Trail Outfitters</title>
+  <meta name="description" content="Demo outdoor gear store for the n8n AI support bot. Fictional business.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛺</text></svg>">
+  <link href="https://cdn.jsdelivr.net/npm/@n8n/chat@1.41.3/dist/style.css" rel="stylesheet">
+  <style>
+    :root {
+      --forest: #1f4d3a; --forest-dark: #163a2b; --sand: #f4efe6; --ink: #1c1917; --muted: #57534e; --card: #fffdf9;
+      --chat--color--primary: var(--forest);
+      --chat--color--primary-shade-50: var(--forest-dark);
+      --chat--color--secondary: var(--forest);
+      --chat--toggle--background: var(--forest);
+      --chat--toggle--hover--background: var(--forest-dark);
+      --chat--header--background: var(--forest);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: var(--sand); }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+    header { background: var(--card); border-bottom: 1px solid #e7e0d4; }
+    header .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 16px; }
+    .logo { font-weight: 800; color: var(--forest); letter-spacing: .02em; }
+    nav { display: flex; gap: 20px; font-size: 14px; color: var(--muted); }
+    .banner { background: var(--forest); color: #fff; text-align: center; font-size: 14px; padding: 8px 16px; }
+    .hero { padding: 56px 0 40px; }
+    .hero h1 { font-size: clamp(30px, 5vw, 46px); line-height: 1.12; margin: 0 0 14px; max-width: 16ch; }
+    .hero p { color: var(--muted); max-width: 54ch; margin: 0 0 22px; }
+    .btn { display: inline-block; background: var(--forest); color: #fff; border: 0; border-radius: 999px; padding: 12px 22px; font: inherit; font-weight: 600; cursor: pointer; }
+    .btn:hover { background: var(--forest-dark); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; padding-bottom: 48px; }
+    .card { background: var(--card); border: 1px solid #e7e0d4; border-radius: 14px; padding: 18px; }
+    .card .art { font-size: 42px; }
+    .card h3 { margin: 6px 0 2px; font-size: 17px; }
+    .card p { margin: 0; color: var(--muted); font-size: 15px; }
+    .price { font-weight: 700; color: var(--forest); }
+    footer { border-top: 1px solid #e7e0d4; padding: 24px 0; color: var(--muted); font-size: 14px; }
+    @media (max-width: 640px) { nav { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="banner">Free standard shipping on orders of $75 or more · 45-day returns</div>
+  <header>
+    <div class="wrap">
+      <span class="logo">TIDE &amp; TRAIL</span>
+      <nav aria-label="Shop"><span>Tents</span><span>Sleeping bags</span><span>Outerwear</span><span>Footwear</span></nav>
+      <span style="font-size:13px;color:var(--muted)">Demo store · fictional</span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <h1>Gear for the long way round</h1>
+      <p>Tents, sleeping bags, outerwear and boots, backed by our lifetime Trail Promise. Questions about an order, sizing or returns? Kai answers in seconds, any time.</p>
+      <button class="btn" id="open-chat" type="button">Ask Kai</button>
+    </section>
+
+    <section class="grid" aria-label="Featured products">
+      <div class="card"><div class="art">⛺</div><h3>Ridgeline 2 Tent</h3><p>2-person, 4 lb 2 oz</p><p class="price">$249</p></div>
+      <div class="card"><div class="art">🧥</div><h3>Summit Down Jacket</h3><p>800-fill responsible down</p><p class="price">$249</p></div>
+      <div class="card"><div class="art">🥾</div><h3>Cascade Hiking Boots</h3><p>Waterproof leather, wide fits</p><p class="price">$189</p></div>
+      <div class="card"><div class="art">🛌</div><h3>Alpine 20°F Sleeping Bag</h3><p>Regular and long</p><p class="price">$219</p></div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">Tide &amp; Trail Outfitters · Bend, Oregon · care@tideandtrail.example · (541) 555-0199</div>
+  </footer>
+
+  <script type="module">
+    import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat@1.41.3/dist/chat.bundle.es.js';
+
+    // Point this at your n8n instance (the Chat Trigger's production URL).
+    const N8N_URL = new URLSearchParams(location.search).get('n8n') || 'http://localhost:5678';
+
+    createChat({
+      webhookUrl: `${N8N_URL}/webhook/tide-trail-chat/chat`,
+      mode: 'window',
+      showWelcomeScreen: false,
+      loadPreviousSession: false,
+      initialMessages: [
+        'Hi, I’m Kai from Tide & Trail 👋',
+        'I can help with shipping, returns, sizing, product care and your order status.',
+      ],
+      i18n: {
+        en: {
+          title: 'Tide & Trail help',
+          subtitle: 'Answers from our help docs, with sources',
+          inputPlaceholder: 'Ask about an order, returns, sizing…',
+          getStarted: 'New conversation',
+          footer: '',
+          closeButtonTooltip: 'Close chat',
+        },
+      },
+    });
+
+    document.getElementById('open-chat').addEventListener('click', () => {
+      document.querySelector('.chat-window-toggle')?.click();
+    });
+  </script>
+</body>
+</html>

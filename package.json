@@ -1,0 +1,18 @@
+{
+  "name": "n8n-support-bot",
+  "private": true,
+  "type": "module",
+  "description": "AI customer support bot for an online store built with n8n, Groq, Ollama embeddings and Qdrant",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test",
+    "ingest": "node scripts/ingest.js",
+    "eval:retrieval": "node scripts/eval-retrieval.js",
+    "eval": "node scripts/eval-chat.js"
+  },
+  "devDependencies": {
+    "luxon": "3.7.2"
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "id": "SbToolTicket001",
+  "name": "Support bot · Tool: create_ticket",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "session_id",
+              "type": "string"
+            },
+            {
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "name": "email",
+              "type": "string"
+            },
+            {
+              "name": "category",
+              "type": "string"
+            },
+            {
+              "name": "reason",
+              "type": "string"
+            },
+            {
+              "name": "question",
+              "type": "string"
+            },
+            {
+              "name": "transcript",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "ff657b51-62c4-46fd-9838-57891ef067fc",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "options": {},
+        "method": "POST",
+        "url": "={{ ($env.STORE_API_URL || 'http://store-api:3000') + '/tickets' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "edd16a5d-223f-4646-9282-3387ec66855e",
+      "name": "Create Ticket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const t = $input.first().json;\nreturn [{ json: {\n  ticket_id: t.id,\n  message: 'Ticket ' + t.id + ' created. The customer care team replies by email within 1 business day'\n    + (t.email ? ' at ' + t.email : '') + '.',\n} }];\n"
+      },
+      "id": "da905004-2118-45aa-8427-8c37c32f38cb",
+      "name": "Ticket Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Create Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Ticket": {
+      "main": [
+        [
+          {
+            "node": "Ticket Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": []
+}

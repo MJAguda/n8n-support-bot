@@ -1,0 +1,329 @@
+{
+  "id": "SbIngestDocs001",
+  "name": "Knowledge base · Rebuild from repo",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ingest-knowledge",
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson",
+        "options": {}
+      },
+      "id": "a61be6af-8420-4dc4-a60d-95b0d56c3cfd",
+      "name": "Rebuild Requested",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "support-bot-ingest"
+    },
+    {
+      "parameters": {
+        "options": {},
+        "method": "DELETE",
+        "url": "={{ ($env.QDRANT_URL || 'http://qdrant:6333') + '/collections/store-kb' }}"
+      },
+      "id": "e3a31fff-3f55-4c5b-b3dd-ad60a33928b8",
+      "name": "Clear Collection",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        220,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "fileSelector": "/project/knowledge/*.md",
+        "options": {}
+      },
+      "id": "cd3666f0-3561-4731-b600-f63fb29046e1",
+      "name": "Read Knowledge Files",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        0
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "binaryPropertyName": "data",
+        "destinationKey": "text",
+        "options": {
+          "keepSource": "both"
+        }
+      },
+      "id": "8d051484-af6a-4b65-b2c4-a4999242cf06",
+      "name": "File Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// One item per section (\"## \" heading) of each knowledge-base file. Every passage starts with\n// \"Document title > Section\", so a passage still says what it's about once it's cut out of the page.\nconst out = [];\nfor (const item of $input.all()) {\n  const text = String(item.json.text ?? '').trim();\n  if (!text) continue;\n  const source = item.binary?.data?.fileName ?? item.json.fileName ?? 'unknown.md';\n  const heading = text.match(/^#\\s+(.+)$/m);\n  const title = heading ? heading[1].trim() : source.replace(/\\.[^.]+$/, '').replace(/[-_]+/g, ' ');\n  const body = text.replace(/^#\\s+.+$/m, '').trim();\n\n  // The text before the first \"## \" is the page introduction.\n  const parts = body.split(/^(?=##\\s)/m).map((p) => p.trim()).filter(Boolean);\n  for (const part of parts) {\n    const sub = part.match(/^##\\s+(.+)$/m);\n    const section = sub ? sub[1].trim() : 'Overview';\n    const content = sub ? part.replace(/^##\\s+.+$/m, '').trim() : part;\n    out.push({ json: { source, title, section, text: title + ' > ' + section + '\\n\\n' + content } });\n  }\n}\nreturn out;\n"
+      },
+      "id": "16f54891-f87f-4fc3-8cf8-fc2534157c21",
+      "name": "Prepare Documents",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "qdrantCollection": {
+          "__rl": true,
+          "mode": "id",
+          "value": "store-kb"
+        },
+        "embeddingBatchSize": 50,
+        "options": {}
+      },
+      "id": "720e6ece-be00-4ed7-97e4-bff8fcb6c1df",
+      "name": "Store in Qdrant",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        1100,
+        0
+      ],
+      "credentials": {
+        "qdrantApi": {
+          "id": "sbQdrant0001",
+          "name": "Qdrant"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "json",
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.text }}",
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "source",
+                "value": "={{ $json.source }}"
+              },
+              {
+                "name": "title",
+                "value": "={{ $json.title }}"
+              },
+              {
+                "name": "section",
+                "value": "={{ $json.section }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "dfc81c1f-6d64-4e8c-9610-7e9fea13178d",
+      "name": "Document Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1020,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "chunkSize": 800,
+        "chunkOverlap": 120,
+        "options": {
+          "splitCode": "markdown"
+        }
+      },
+      "id": "bbf9b679-dba2-472e-ab75-44b7830af8f9",
+      "name": "Split Into Passages",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:v1.5"
+      },
+      "id": "6672db2c-a0ec-4e75-bf2a-091f868ad432",
+      "name": "Ollama Embeddings",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        240
+      ],
+      "credentials": {
+        "ollamaApi": {
+          "id": "sbOllama0001",
+          "name": "Ollama"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {},
+        "url": "={{ ($env.QDRANT_URL || 'http://qdrant:6333') + '/collections/store-kb' }}"
+      },
+      "id": "eeb5f14a-084d-4779-8cc0-1d6a827a59f9",
+      "name": "Collection Info",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1420,
+        0
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const files = [...new Set($('Prepare Documents').all().map((i) => i.json.source))];\nreturn [{ json: {\n  documents: files.length,\n  sections: $('Prepare Documents').all().length,\n  passages: $input.first().json.result?.points_count ?? null,\n  files,\n} }];\n"
+      },
+      "id": "4ea49c47-d3bc-41d6-b916-a827962ccf24",
+      "name": "Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1640,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Rebuild Requested": {
+      "main": [
+        [
+          {
+            "node": "Clear Collection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Collection": {
+      "main": [
+        [
+          {
+            "node": "Read Knowledge Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Knowledge Files": {
+      "main": [
+        [
+          {
+            "node": "File Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "File Text": {
+      "main": [
+        [
+          {
+            "node": "Prepare Documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Documents": {
+      "main": [
+        [
+          {
+            "node": "Store in Qdrant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Document Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Store in Qdrant",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Into Passages": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Document Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Store in Qdrant",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store in Qdrant": {
+      "main": [
+        [
+          {
+            "node": "Collection Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collection Info": {
+      "main": [
+        [
+          {
+            "node": "Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

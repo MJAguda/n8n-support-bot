@@ -1,0 +1,95 @@
+{
+  "id": "SbToolOrder0001",
+  "name": "Support bot · Tool: lookup_order",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "order_number",
+              "type": "string"
+            },
+            {
+              "name": "email",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "c851df9b-74ec-478e-8756-bb6ae256ff68",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "url": "={{ ($env.STORE_API_URL || 'http://store-api:3000') + '/orders/' + encodeURIComponent($json.order_number) + '?email=' + encodeURIComponent($json.email) }}"
+      },
+      "id": "864e8640-ea92-4bbe-87f4-76bd9899aaab",
+      "name": "Get Order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Turns the store API's answer into short facts for the assistant. A 404 never says whether the order exists.\nconst res = $input.first().json;\nconst order = res.body ?? {};\nif (res.statusCode !== 200) {\n  return [{ json: { found: false, message: 'No order matches that order number and email. Ask the customer to check both (the email must be the one used at checkout).' } }];\n}\nconst date = (iso) => iso ? new Date(iso + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }) : null;\nconst items = (order.items ?? []).map((i) => (i.qty > 1 ? i.qty + ' x ' : '') + i.name).join(', ');\nconst STATUS = {\n  processing: 'Being packed at the warehouse. Estimated delivery ' + date(order.estimated_delivery) + '.',\n  shipped: 'Shipped with ' + order.carrier + ', tracking number ' + order.tracking_number + '. Estimated delivery ' + date(order.estimated_delivery) + '.',\n  delivered: 'Delivered on ' + date(order.delivered_at) + ' by ' + order.carrier + ' (tracking ' + order.tracking_number + ').',\n  backordered: 'Waiting on a backordered item. Estimated delivery ' + date(order.estimated_delivery) + '.',\n  return_in_progress: 'Return received on ' + date(order.return?.received_at) + '. Refund ' + (order.return?.refund_status ?? 'processing')\n    + ', expected by ' + date(order.return?.refund_expected_by) + '.',\n};\nreturn [{ json: {\n  found: true,\n  order_number: order.number,\n  placed: date(order.placed_at),\n  items,\n  status: order.status,\n  summary: STATUS[order.status] ?? 'Status: ' + order.status + '.',\n  note: order.note ?? null,\n} }];\n"
+      },
+      "id": "9c142c31-45ab-4db3-92e9-24ea8e232d77",
+      "name": "Format Order",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Order": {
+      "main": [
+        [
+          {
+            "node": "Format Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": []
+}

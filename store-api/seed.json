@@ -1,0 +1,61 @@
+{
+  "_note": "Fictional orders for the Tide & Trail Outfitters demo. Names and emails are made up.",
+  "orders": [
+    {
+      "number": "TT-10432",
+      "email": "maya.chen@example.com",
+      "placed_at": "2026-10-19",
+      "status": "shipped",
+      "carrier": "UPS",
+      "tracking_number": "1Z999AA10123456784",
+      "estimated_delivery": "2026-10-28",
+      "items": [{ "name": "Ridgeline 2 Tent", "qty": 1 }, { "name": "Trail Lantern", "qty": 2 }],
+      "total": 329.0
+    },
+    {
+      "number": "TT-10458",
+      "email": "jordan.ellis@example.com",
+      "placed_at": "2026-10-23",
+      "status": "processing",
+      "carrier": null,
+      "tracking_number": null,
+      "estimated_delivery": "2026-10-31",
+      "items": [{ "name": "Summit Down Jacket (M, Slate)", "qty": 1 }],
+      "total": 249.0
+    },
+    {
+      "number": "TT-10371",
+      "email": "sam.okafor@example.com",
+      "placed_at": "2026-10-08",
+      "status": "delivered",
+      "carrier": "USPS",
+      "tracking_number": "9400111899223456789012",
+      "delivered_at": "2026-10-14",
+      "items": [{ "name": "Cascade Hiking Boots (US 10)", "qty": 1 }],
+      "total": 189.0
+    },
+    {
+      "number": "TT-10466",
+      "email": "priya.n@example.com",
+      "placed_at": "2026-10-24",
+      "status": "backordered",
+      "carrier": null,
+      "tracking_number": null,
+      "estimated_delivery": "2026-11-12",
+      "note": "The Alpine Sleeping Bag is back in stock on Nov 7 and will ship then.",
+      "items": [{ "name": "Alpine 20F Sleeping Bag", "qty": 1 }],
+      "total": 219.0
+    },
+    {
+      "number": "TT-10302",
+      "email": "lucas.reyes@example.com",
+      "placed_at": "2026-09-28",
+      "status": "return_in_progress",
+      "carrier": "UPS",
+      "tracking_number": "1Z999AA10198765432",
+      "return": { "received_at": "2026-10-21", "refund_status": "processing", "refund_expected_by": "2026-10-31" },
+      "items": [{ "name": "Trailhead Rain Shell (L, Moss)", "qty": 1 }],
+      "total": 159.0
+    }
+  ]
+}
